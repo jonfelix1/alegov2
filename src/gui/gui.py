@@ -78,7 +78,7 @@ class Scan_Frame(tk.Frame):
         settings_frame = Set_Frame(self)
         settings_frame.grid(row = 4, column = 0, sticky = 'news', padx = "5", pady= "5")
 
-        self.scan_image_file = PImage.open(settings.get_master_dir() + "gui/17750982_muscle_practice.jpeg")
+        self.scan_image_file = PImage.open(settings.get_master_dir() + "src/gui/17750982_muscle_practice.jpeg")
         self.scan_image_file.thumbnail(settings.get_img_size(), PImage.ANTIALIAS)
         self.scan_image = PImageTK.PhotoImage(image=self.scan_image_file)
 
@@ -219,7 +219,7 @@ class Detect_Frame(tk.Frame):
             #print("img num : ",image)
             #print("Row ", row," column ", column)
 
-            self.image_paths.append( PImage.open(settings.get_master_dir() + "gui/empty.png") )
+            self.image_paths.append( PImage.open(settings.get_master_dir() + "src/gui/empty.png") )
             self.image_paths[i].thumbnail(settings.get_img_size(), PImage.ANTIALIAS)
             self.detect_images.append(PImageTK.PhotoImage(image = self.image_paths[i]))
 
