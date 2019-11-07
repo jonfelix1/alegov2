@@ -15,9 +15,7 @@ import cv2
 from tempfile import TemporaryFile
 tempImgArr = TemporaryFile()
 
-image_db = []
-image_db_as_path = []
-image_desc = []
+
 
 #curr_image_desc = None
 
@@ -37,6 +35,10 @@ class Settings():
         self.curr_image_desc = None
         self.current_compare = []
 
+        self.image_db = []
+        self.image_db_as_path = []
+        self.image_desc = []
+
     def set_to_show(self, neo_to_show):
         self.to_show = neo_to_show
     
@@ -48,7 +50,7 @@ class Settings():
 
     def set_scan_type(self, neo_scan_type):
         self.scan_type = neo_scan_type
-        print("Scan type changed to ", self.get_scan_type())
+        ##!print("Scan type changed to ", self.get_scan_type())
 
     def set_scan_img_sel(self, neo_scan_img_status):
         self.scan_image_selected = neo_scan_img_status
@@ -93,28 +95,36 @@ class MainApplication(tk.Frame):
 
         if (self.settings.get_scan_type() == 1): # 0 is cosine, 1 is euclid
             #most_similar_db_idx.clear()
-            for i in range(len(image_desc)):
+            for i in range(len(self.settings.image_desc)): #Gets the similarity metric using Euclidean
                 #print("curr_image_desc : ", self.settings.curr_image_desc)
                 #print("Image des _ I :", image_desc[i])
-                self.settings.current_compare.append(backEnd.euclidean_distance(self.settings.curr_image_desc, image_desc[i]))
-                self.settings.most_similar_db_idx = np.argsort(self.settings.current_compare)[(-1 * self.settings.get_to_show()):]
+                self.settings.current_compare.append(backEnd.euclidean_distance(self.settings.curr_image_desc, self.settings.image_desc[i]))
+                if (self.settings.get_to_show() > 0):
+                    self.settings.most_similar_db_idx = (np.argsort(self.settings.current_compare)[::-1])[(-1 * self.settings.get_to_show()):]
+                    self.settings.most_similar_db_idx = self.settings.most_similar_db_idx[::-1]
+                else :
+                    self.settings.most_similar_db_idx = []
         else:
-            for i in range(len(image_desc)):
+            for i in range(len(self.settings.image_desc)): #Gets the similarity metric using cosine
                 #print("curr_image_desc : ", self.settings.curr_image_desc)
                 #print("Image des _ I :", image_desc[i])
-                self.settings.current_compare.append(backEnd.cosine_similarity(self.settings.curr_image_desc, image_desc[i]))
-                self.settings.most_similar_db_idx = np.argsort(self.settings.current_compare)[(-1 * self.settings.get_to_show()):]
+                self.settings.current_compare.append(backEnd.cosine_similarity(self.settings.curr_image_desc, self.settings.image_desc[i]))
+                if (self.settings.get_to_show() > 0):
+                    self.settings.most_similar_db_idx = np.argsort(self.settings.current_compare)[(-1 * self.settings.get_to_show()):]
+                    self.settings.most_similar_db_idx = self.settings.most_similar_db_idx[::-1]
+                else :
+                    self.settings.most_similar_db_idx = []
         
-        print("self.settings.most_similar_db_idx : ", self.settings.most_similar_db_idx)
+        ##!print("self.settings.most_similar_db_idx : ", self.settings.most_similar_db_idx)
 
     def callDetectionAgain(self): # Calls the detection and repopulates the detection frame
-        print("DETECT AGAINA")
+        ##!print("DETECT AGAINA")
         self.compareImages()
         self.drame.fill_detections()
 
     def show_scanning_window(self):
         ## Resets the column and row configurantion
-        print("image_db lenth : ", len(image_db))
+        ##!print("image_db lenth : ", len(image_db))
         self.columnconfigure(0, weight = 0)
         self.columnconfigure(2, weight = 0)
         self.columnconfigure(4, weight = 0)
@@ -138,8 +148,26 @@ class MainApplication(tk.Frame):
         self.scan_progress = scan_progBar(self, mode = 'determinate', maximum = self.settings.get_to_show(), length = self.settings.get_to_show())
         self.scan_progress.grid(row = 999, column = 0, columnspan = 2, sticky='we', padx = 5, pady =5)
 
-        self.info_button = tk.Button(self, text="i")
+        self.info_button = tk.Button(self, text="i", command = self.show_about_window)
         self.info_button.grid(row = 999, column = 2)
+
+
+    def show_about_window(self):
+        a_win = tk.Toplevel(root)
+        #a_win.rowconfigure(0, weigth = 1)
+        #a_win.columnconfigure(0, weigth = 1)
+        #a_win.grid(row = 0, column = 0, sticky = 'news')
+        a_win.resizable(False, False)
+
+        a_f = tk.Frame(a_win)
+        a_f.grid(row = 0, column = 0)
+
+        about_label = tk.Label(a_f, text = """A face recognition application with a ranker feature.\nA grand task for Linear and Geometric Algebra.\n
+        Zaidan Naufal - Extractor, Report\nJon Felix - Extractor, Matcher\nHanif Muhamad - GUI\nCreated with Python 3, OpenCV, Tkinter, PIL, numpy, glob""")
+        about_label.grid(row = 0, column = 0)
+
+        about_label['text'] = """A face recognition application with a ranker feature.\nA grand task for Linear and Geometric Algebra.\n
+        Zaidan Naufal - Extractor, Report\nJon Felix - Extractor, Matcher\nHanif Muhamad - GUI\n\nCreated with Python 3, OpenCV, Tkinter, PIL, numpy, glob"""
 
     def show_welcoming_window(self):
         ## Reset grid config
@@ -201,18 +229,18 @@ class MainApplication(tk.Frame):
         time.sleep(.2)
 
         for img in glob.glob(glob_dir):
-            image_db_as_path.append(img)
-            image_db.append(cv2.imread(img))
+            self.settings.image_db_as_path.append(img)
+            self.settings.image_db.append(cv2.imread(img))
         print("Image loading done")
-        print("image_db lenth : ", len(image_db))
+        ##!print("image_db lenth : ", len(image_db))
 
         self.info_label['text'] = "Extracting image descriptions"
         self.update_idletasks()
 
         time.sleep(.2)
 
-        for i in range(100):
-            image_desc.append(backEnd.extract_features(image_db[i]))
+        for i in range(len(self.settings.image_db_as_path)):
+            self.settings.image_desc.append(backEnd.extract_features(self.settings.image_db[i]))
 
     def open_extracted_databse(self, *args):
         extract_db = tkfd.askopenfile(title = "Select a database of extracted images", filetypes = (("Image Databse",".npy"),("all files","*.* .*")))
@@ -220,12 +248,12 @@ class MainApplication(tk.Frame):
         if (extract_db == '' or extract_db == None):
             print("NO FILES SELECTED!!!!")
         else:
-            print("extract_db : ", extract_db)
+            ##!print("extract_db : ", extract_db)
             
             #image_desc = np.load(extract_db)
             # DOESN'T WORK YET
 
-            print(image_desc)
+            ##!print(image_desc)
             for child in self.winfo_children():
                 child.destroy()
             self.show_scanning_window()
@@ -259,7 +287,7 @@ class Scan_Frame(tk.Frame):
         top_frame = tk.Frame(self)
         top_frame.grid(row = 0, column = 0, columnspan = 4)#, sticky = 'we')
 
-        back_bt = tk.Button(top_frame, text = "back")
+        back_bt = tk.Button(top_frame, text = "BACK", command=self.back_to_welcome)
         back_bt.grid(row = 0, column = 1, sticky = 'w')
 
         open_bt = tk.Button(self, text = "Open Image", command = self.open_file) # Open image file to use as scan image
@@ -306,7 +334,18 @@ class Scan_Frame(tk.Frame):
         self.master.settings.set_scan_img_sel(True)
 
         self.master.settings.curr_image_desc = backEnd.extract_features(cv2.imread(image_path))
-        print("curr_image_desc : ", self.master.settings.curr_image_desc)
+        ##!print("curr_image_desc : ", self.master.settings.curr_image_desc)
+
+    def back_to_welcome(self):
+        for child in self.master.winfo_children():
+            child.destroy()
+
+        for img in self.master.settings.image_db:
+            img = None
+        self.master.settings.image_db = []
+        self.master.settings.image_db_as_path = []
+        self.master.settings.image_desc = []
+        self.master.show_welcoming_window()
 
 class Set_Frame(tk.Frame):
     # The frame for the settings stuffs, this used to be in a separate window
@@ -329,8 +368,8 @@ class Set_Frame(tk.Frame):
 
         self.scan_type_var = tk.IntVar()
         self.scan_type_var.set(self.master.master.settings.get_scan_type())
-        print("self.master.master.settings.get_scan_type() : ", self.master.master.settings.get_scan_type())
-        print("self.scan_type_var : ", self.scan_type_var.get())
+        ##!print("self.master.master.settings.get_scan_type() : ", self.master.master.settings.get_scan_type())
+        ##!print("self.scan_type_var : ", self.scan_type_var.get())
 
         scan_type_label = ttk.Label(self, text = "Similarity Metric : ")
         scan_type_label.grid(row = 5, column = 1)
@@ -344,7 +383,7 @@ class Set_Frame(tk.Frame):
 
     def apply_settings(self, *args):
         settings.set_to_show(int(self.num_to_show.get()))
-        print("to show : ", settings.get_to_show())
+        ##!print("to show : ", settings.get_to_show())
         if (self.master.master.settings.get_scan_img_sel()):
             self.master.master.callDetectionAgain()
 
@@ -359,7 +398,7 @@ class Set_Frame(tk.Frame):
     def set_settings_scan_type(self, scan_type_value):
         self.scan_type_var.set(scan_type_value)
         self.master.master.settings.set_scan_type(scan_type_value)
-        print("AA")
+        ##!print("AA")
 
 class Detect_Frame(tk.Frame):
     image_paths = []
@@ -396,12 +435,12 @@ class Detect_Frame(tk.Frame):
         self.images_frame.bind("<Configure>", self.onFrameConfigure)
         self.canvas.bind("<Configure>", self.checkImgRow)
 
-        print(settings.get_img_size())
+        ##!print(settings.get_img_size())
         self.update_idletasks()
         max_img = self.winfo_reqwidth() // settings.get_img_size()[0]
         self.max_img_showed = max_img
-        print("frame.winfo_width : ", self.winfo_reqwidth())
-        print("max_img_showed :::", self.max_img_showed)
+        ##!print("frame.winfo_width : ", self.winfo_reqwidth())
+        ##!print("max_img_showed :::", self.max_img_showed)
 
         self.empty_label = tk.Label(self, text="Please select an image to scan first")
         self.empty_label.grid(row = 0, column = 0, sticky = 'news')
@@ -424,8 +463,8 @@ class Detect_Frame(tk.Frame):
 
     def checkImgRow(self, event):
         max_img = event.width // settings.get_img_size()[0]
-        print("neo self.winfo_reqwidth() ", event.width)
-        print("max_row_neo : ", max_img)
+        ##!print("neo self.winfo_reqwidth() ", event.width)
+        ##!print("max_row_neo : ", max_img)
         if (self.max_img_showed != max_img):
             print("RESIZE!!!")
             self.max_img_showed = max_img
@@ -436,8 +475,8 @@ class Detect_Frame(tk.Frame):
 
 
     def fill_detections(self):
-        print("FILLING YOU UP!!!")
-        print("Current to show : ", settings.get_to_show())
+        ##!print("FILLING YOU UP!!!")
+        ##!print("Current to show : ", settings.get_to_show())
         padding = 3 , 3
         column = 0
         row = 0
@@ -459,7 +498,7 @@ class Detect_Frame(tk.Frame):
         self.master.scan_progress.set_max_len(self.master.settings.get_to_show())
 
         #for image in range(settings.get_to_show()):
-        print("most_similar_db_idx len : ", len(self.master.settings.most_similar_db_idx))
+        ##!print("most_similar_db_idx len : ", len(self.master.settings.most_similar_db_idx))
         for image in self.master.settings.most_similar_db_idx:
             #print("img num : ",image)
             #print("Row ", row," column ", column)
@@ -467,11 +506,11 @@ class Detect_Frame(tk.Frame):
             self.master.scan_progress.set_val(i)
 
             #self.image_paths.append( PImage.open(settings.get_master_dir() + "/gui/empty.png") )
-            self.image_paths.append( PImage.open(image_db_as_path[image]) )
+            self.image_paths.append( PImage.open(self.master.settings.image_db_as_path[image]) )
             self.image_paths[i].thumbnail(settings.get_img_size(), PImage.ANTIALIAS)
             self.detect_images.append(PImageTK.PhotoImage(image = self.image_paths[i]))
 
-            print("Image DB I : ", image_db_as_path[image])
+            ##!print("Image DB I : ", image_db_as_path[image])
 
             self.detect_labels.append(tk.Label(self.images_frame, text=ntpath.basename(self.image_paths[i].filename) + "\n" + str(round(self.master.settings.current_compare[image], 4)), image = self.detect_images[i], compound ='top'))
             #print(self.detect_labels)
