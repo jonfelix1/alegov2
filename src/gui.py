@@ -53,10 +53,24 @@ class MainApplication(tk.Frame):
         self.drame = Detect_Frame(self, borderwidth=5, relief="groove")
         self.drame.grid(row = 0, column = 1, sticky = 'news')
 
+        self.scan_progress = scan_progBar(self, mode = 'determinate', maximum = self.settings.get_to_show(), length = self.settings.get_to_show())
+        self.scan_progress.grid(row = 999, column = 0, columnspan = 2, sticky='we', padx = 5, pady =5)
+
     def callDetectionAgain(self):
         print("DETECT AGAINA")
         self.drame.fill_detections()
 
+class scan_progBar(ttk.Progressbar):
+    def __init__(self, master, *args, **kwargs):
+        ttk.Progressbar.__init__(self, master, *args, **kwargs)
+        self.master = master
+
+    def set_max_len(self, max_Len):
+        self['maximum'] = max_Len
+        self['length'] = max_Len
+
+    def set_val(self, cur_val):
+        self['value'] = cur_val
 
 class Scan_Frame(tk.Frame):
     def __init__(self, master, *args, **kwargs):
@@ -225,9 +239,13 @@ class Detect_Frame(tk.Frame):
             image.close()
         self.image_paths.clear()
 
+        self.master.scan_progress.set_max_len(self.master.settings.get_to_show())
+
         for image in range(settings.get_to_show()):
             #print("img num : ",image)
             #print("Row ", row," column ", column)
+
+            self.master.scan_progress.set_val(i)
 
             self.image_paths.append( PImage.open(settings.get_master_dir() + "src/gui/empty.png") )
             self.image_paths[i].thumbnail(settings.get_img_size(), PImage.ANTIALIAS)
@@ -245,6 +263,8 @@ class Detect_Frame(tk.Frame):
                 
             self.update_idletasks()
             time.sleep(.001)
+
+        self.master.scan_progress.set_val(self.master.settings.get_to_show())
 
     def change_image_place(self):
         padding = 3 , 3
