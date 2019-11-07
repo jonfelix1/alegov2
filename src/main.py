@@ -9,7 +9,7 @@ from tempfile import TemporaryFile
 arrV = TemporaryFile()
 
 # Operators
-# @jit(nopython = True)
+@jit(nopython = True)
 def euclidean_distance(arrVector1, arrVector2):
     # Besar dari arrVector1 dan arrVector2 harus sama
     sum = 0
@@ -17,7 +17,7 @@ def euclidean_distance(arrVector1, arrVector2):
         sum += (arrVector1[i] - arrVector2[i])**2
     return sum**0.5
 
-# @jit(nopython = True)
+@jit(nopython = True)
 def cosine_similarity(arrVector1, arrVector2):
     # Besar dari arrVector1 dan arrVector2 harus sama
     v = 0
@@ -51,49 +51,33 @@ def extract_features(image, vector_size=32):
 
     return desc
 
-
-# def batch_extractor(images_path, pickled_db_path="features.pck"):
-#     files = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
-
-#     result = {}
-#     for f in files:
-#         print ("Extracting features from image" ,f) 
-#         name = f.split('/')[-1].lower()
-#         result[name] = extract_features(f)
+def best10match_cosine(img, arrDescription, arrImg):
+    img_f = extract_features(img)
+    temp = []
+    for i in range(len(arrDescription)):
+        temp.append(cosine_similarity(img_f, arrDescription[i]))
+    cv2.imshow('AA', img)
+    cv2.waitKey(0)
+    top_10_idx = np.argsort(temp)[-10:]
+    for i in top_10_idx:
+        cv2.imshow('Pic', arrImg[i])
+        cv2.waitKey(0)
     
-#     # saving all our feature vectors in pickled file
-#     pickle_out = open("dict.pickle","wb")
-#     pickle.dump(result, pickle_out)
-#     pickle_out.close()
+    return
 
-# def show_img(path):
-#     img = cv2.imread(images_path)
-#     plt.imshow(img)
-#     plt.show()
-    
-# def run():
-#     images_path = ("D:\Coding\images")
-#     files = [os.path.join(images_path, p) for p in sorted(os.listdir(images_path))]
-#     # getting 3 random images 
-#     sample = random.sample(files, 3)
-    
-#     batch_extractor(images_path)
+def best10match_euclid(img, arrDescription, arrImg):
+    img_f = extract_features(img)
+    temp = []
+    for i in range(len(arrDescription)):
+        temp.append(euclidean_distance(img_f, arrDescription[i]))
+    cv2.imshow('AA', img)
+    cv2.waitKey(0)
+    top_10_idx = np.argsort(temp)[-10:]
+    for i in top_10_idx:
+        cv2.imshow('Pic', arrImg[i])
+        cv2.waitKey(0)
 
-#     ma = Matcher('features.pck')
-    
-#     for s in sample:
-#         print("Query image ==========================================")
-#         show_img(s)
-#         names, match = ma.match(s, topn=3)
-#         print ("Result images ========================================'")
-#         for i in range(3):
-#             # we got cosine distance, less cosine distance between vectors
-#             # more they similar, thus we subtruct it from 1 to get match value
-#             print ("Match",(1-match[i]))
-#             show_img(os.path.join(images_path, names[i]))
-
-
-
+    return
 
 def main():
     img_database = []
@@ -102,16 +86,13 @@ def main():
     print("Image loading done")
 
     img_description = []
-    for i in range(5):
+    for i in range(100):
         img_description.append(extract_features(img_database[i]))
     
     # for i in range(5):
     #     print(img_description[i])
 
-    with open('listfile.txt', 'w') as filehandle:
-        for listitem in img_description:
-            filehandle.write('%s\n' % listitem)
-
+    # Save file dan load file (ntar cuman load)
     np.save(arrV, img_description)
     _ = arrV.seek(0)
     a = np.load(arrV)
@@ -124,8 +105,11 @@ def main():
     print(cosine_similarity(a[0], a[2]))
     print(len(a[0]))
 
+    # Testing (contoh)
+    img = cv2.imread("img/Test/zendaya14.jpg")
+    # best10match_cosine(img,img_description,img_database)
+    best10match_euclid(img,img_description,img_database)
+
 starttime = time.time()
 main()
 print('That took {} seconds'.format(time.time()-starttime))
-# Zaidan ngopas doang ini..
-# Gw lanjutin habis makan malem
