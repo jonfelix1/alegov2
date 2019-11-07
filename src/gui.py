@@ -63,7 +63,9 @@ class Scan_Frame(tk.Frame):
         tk.Frame.__init__(self, master, *args, **kwargs)
         self.master = master
         self.grid(sticky='news')
-        self.grid_rowconfigure(0, weight = 1)
+        self.grid_rowconfigure(0, weight = 4)
+        self.grid_rowconfigure(2, weight = 1)
+        self.grid_rowconfigure(4, weight = 1)
         self.grid_columnconfigure(0, weight = 1)
 
         open_bt = tk.Button(self, text = "Open Image", command = self.open_file)
@@ -82,7 +84,8 @@ class Scan_Frame(tk.Frame):
         self.scan_image_file.thumbnail(settings.get_img_size(), PImage.ANTIALIAS)
         self.scan_image = PImageTK.PhotoImage(image=self.scan_image_file)
 
-        self.scan_image_label = tk.Label(self, image = self.scan_image, text = ntpath.basename(self.scan_image_file.filename), compound = "top", padx = "5", pady= "5")
+        #self.scan_image_label = tk.Label(self, image = self.scan_image, text = ntpath.basename(self.scan_image_file.filename), compound = "top", padx = "5", pady= "5")
+        self.scan_image_label = tk.Label(self, image = self.scan_image, text = "Please select an image to scan", compound = "top", padx = "5", pady= "5")
         self.scan_image_label.image = self.scan_image
         self.scan_image_label.grid(row = 0, column = 0)
 
@@ -92,6 +95,8 @@ class Scan_Frame(tk.Frame):
         print(filename)
 
         self.change_scan_image(filename)
+
+        self.master.callDetectionAgain()
 
         #Detect_Frame.fill_detections()
 
@@ -151,6 +156,8 @@ class Detect_Frame(tk.Frame):
 
         self.images_frame = tk.Frame(self.canvas)
         self.images_frame.grid(column = 0, row = 0, sticky='news')
+        self.images_frame.columnconfigure(0, weight=1)
+        self.images_frame.rowconfigure(0, weight=1)
         
 
         self.vsb = tk.Scrollbar(self, orient="vertical", command = self.canvas.yview)
@@ -168,7 +175,10 @@ class Detect_Frame(tk.Frame):
         print("frame.winfo_width : ", self.winfo_reqwidth())
         print("max_img_showed :::", self.max_img_showed)
 
-        self.fill_detections()
+        self.empty_label = tk.Label(self.images_frame, text="Please select an image to scan first")
+        self.empty_label.grid(row = 100, column = 100)
+
+        #self.fill_detections()
 
 
     def on_mousewheel(self, event):
