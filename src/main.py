@@ -1,13 +1,15 @@
 import cv2
 import glob
 import numpy as np
-import scipy
-import pickle as pickle
-import random
-import os
+import multiprocessing
+import time
+from numba import jit
 # import matplotlib.pyplot as plt
+from tempfile import TemporaryFile
+arrV = TemporaryFile()
 
 # Operators
+# @jit(nopython = True)
 def euclidean_distance(arrVector1, arrVector2):
     # Besar dari arrVector1 dan arrVector2 harus sama
     sum = 0
@@ -15,6 +17,7 @@ def euclidean_distance(arrVector1, arrVector2):
         sum += (arrVector1[i] - arrVector2[i])**2
     return sum**0.5
 
+# @jit(nopython = True)
 def cosine_similarity(arrVector1, arrVector2):
     # Besar dari arrVector1 dan arrVector2 harus sama
     v = 0
@@ -33,7 +36,7 @@ def cosine_similarity(arrVector1, arrVector2):
 # cv2.imshow('Pic',img_database[3])
 # cv2.waitKey(0)
 
-def extract_features(image, vector_size=2048):
+def extract_features(image, vector_size=32):
     alg = cv2.KAZE_create()
     kps = alg.detect(image)
     kps = sorted(kps, key = lambda x: -x.response)[:vector_size]
@@ -90,23 +93,39 @@ def extract_features(image, vector_size=2048):
 #             show_img(os.path.join(images_path, names[i]))
 
 
+
+
 def main():
     img_database = []
     for img in glob.glob("img/*.jpg"):
         img_database.append(cv2.imread(img))
-    
     print("Image loading done")
 
     img_description = []
     for i in range(5):
         img_description.append(extract_features(img_database[i]))
     
-    for i in range(5):
-        print(img_description[i])
+    # for i in range(5):
+    #     print(img_description[i])
+
+    with open('listfile.txt', 'w') as filehandle:
+        for listitem in img_description:
+            filehandle.write('%s\n' % listitem)
+
+    np.save(arrV, img_description)
+    _ = arrV.seek(0)
+    a = np.load(arrV)
 
     print(euclidean_distance(img_description[0], img_description[2]))
     print(cosine_similarity(img_description[0], img_description[2]))
+    print(len(img_description[0]))
 
+    print(euclidean_distance(a[0], a[2]))
+    print(cosine_similarity(a[0], a[2]))
+    print(len(a[0]))
+
+starttime = time.time()
 main()
+print('That took {} seconds'.format(time.time()-starttime))
 # Zaidan ngopas doang ini..
 # Gw lanjutin habis makan malem
