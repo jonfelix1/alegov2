@@ -10,6 +10,8 @@ class Settings():
         self.master_directory = master_dir
         self.to_show = to_show
         self.image_sizes = img_size
+        self.scan_type = 0
+        self.scan_image_selected = False
 
     def set_to_show(self, neo_to_show):
         self.to_show = neo_to_show
@@ -20,6 +22,13 @@ class Settings():
     def set_img_size(self, neo_img_size):
         self.image_sizes = neo_img_size
 
+    def set_scan_type(self, neo_scan_type):
+        self.scan_type = neo_scan_type
+        print("Scan type changed to ", self.get_scan_type())
+
+    def set_scan_img_sel(self, neo_scan_img_status):
+        self.scan_image_selected = neo_scan_img_status
+
     def get_to_show(self):
         return self.to_show
     
@@ -28,6 +37,12 @@ class Settings():
 
     def get_img_size(self):
         return self.image_sizes
+    
+    def get_scan_type(self):
+        return self.scan_type
+    
+    def get_scan_img_sel(self):
+        return self.scan_image_selected
 
 class MainApplication(tk.Frame):
     def __init__(self, master, settings_object, *args, **kwargs):
@@ -77,22 +92,22 @@ class Scan_Frame(tk.Frame):
         tk.Frame.__init__(self, master, *args, **kwargs)
         self.master = master
         self.grid(sticky='news')
-        self.grid_rowconfigure(0, weight = 4)
-        self.grid_rowconfigure(2, weight = 1)
-        self.grid_rowconfigure(4, weight = 1)
+        #self.grid_rowconfigure(0, weight = 1)
+        self.grid_rowconfigure(0, weight = 1)
+        self.grid_rowconfigure(30, weight = 1)
         self.grid_columnconfigure(0, weight = 1)
 
         open_bt = tk.Button(self, text = "Open Image", command = self.open_file)
-        open_bt.grid(row = 2, column = 0)
+        open_bt.grid(row = 11, column = 0)
 
         img_bt_sep = ttk.Separator(self, orient = 'horizontal')
-        img_bt_sep.grid(row = 1, column = 0, sticky = 'we', padx = "5", pady= "5")
+        img_bt_sep.grid(row = 0, column = 0, padx = "5", pady= "5")
 
         bt_set_sep = ttk.Separator(self, orient = 'horizontal')
-        bt_set_sep.grid(row = 3, column = 0, sticky = 'we', padx = "5", pady= "5")
+        bt_set_sep.grid(row = 30, column = 0, padx = "5", pady= "5")
 
         settings_frame = Set_Frame(self)
-        settings_frame.grid(row = 4, column = 0, sticky = 'news', padx = "5", pady= "5")
+        settings_frame.grid(row = 40, column = 0, padx = "5", pady= "5")
 
         self.scan_image_file = PImage.open(settings.get_master_dir() + "src/gui/17750982_muscle_practice.jpeg")
         self.scan_image_file.thumbnail(settings.get_img_size(), PImage.ANTIALIAS)
@@ -101,16 +116,19 @@ class Scan_Frame(tk.Frame):
         #self.scan_image_label = tk.Label(self, image = self.scan_image, text = ntpath.basename(self.scan_image_file.filename), compound = "top", padx = "5", pady= "5")
         self.scan_image_label = tk.Label(self, image = self.scan_image, text = "Please select an image to scan", compound = "top", padx = "5", pady= "5")
         self.scan_image_label.image = self.scan_image
-        self.scan_image_label.grid(row = 0, column = 0)
+        self.scan_image_label.grid(row = 10, column = 0)
 
     def open_file(self, *args):
         filename = tkfd.askopenfilename(title = "Select image to scan",filetypes = (("image files",".jpg .jpeg .png"),("all files","*.* .*")))
 
-        print(filename)
+        if (filename == ''):
+            print("NO FILES SELECTED!!!!")
+        else:
+            print(filename)
+            self.change_scan_image(filename)
+            self.master.callDetectionAgain()
 
-        self.change_scan_image(filename)
 
-        self.master.callDetectionAgain()
 
         #Detect_Frame.fill_detections()
 
@@ -141,12 +159,42 @@ class Set_Frame(tk.Frame):
         sett_label.grid(column=3, row=1)
 
         apply_bt = tk.Button(self, text = "Apply", command = self.apply_settings)
-        apply_bt.grid(row = 1, column = 9)
+        apply_bt.grid(row = 9, column = 1, columnspan = 3)
+
+        self.scan_type_var = tk.IntVar()
+        self.scan_type_var.set(self.master.master.settings.get_scan_type())
+        print("self.master.master.settings.get_scan_type() : ", self.master.master.settings.get_scan_type())
+        print("self.scan_type_var : ", self.scan_type_var.get())
+
+        scan_type_label = ttk.Label(self, text = "Change Scan\nSimilarity Matrix")
+        scan_type_label.grid(row = 5, column = 1)
+
+        cos_radio_button = ttk.Radiobutton(self, text = "Cosinus", variable = self.scan_type_var, value = 0, command = self.set_scan_to_cosine)
+        cos_radio_button.grid(row = 5, column = 2)
+
+
+        euc_radio_button = ttk.Radiobutton(self, text = "Euclidean", variable = self.scan_type_var, value = 1, command = self.set_scan_to_euclid)
+        euc_radio_button.grid(row = 5, column = 3)
 
     def apply_settings(self, *args):
         settings.set_to_show(int(self.num_to_show.get()))
         print("to show : ", settings.get_to_show())
-        self.master.master.callDetectionAgain()
+        if (self.master.master.settings.get_scan_img_sel()):
+            self.master.master.callDetectionAgain()
+
+    
+    
+    def set_scan_to_cosine(self):
+        self.set_settings_scan_type(0)
+
+    def set_scan_to_euclid(self):
+        self.set_settings_scan_type(1)
+
+    
+    def set_settings_scan_type(self, scan_type_value):
+        self.scan_type_var.set(scan_type_value)
+        self.master.master.settings.set_scan_type(scan_type_value)
+        print("AA")
 
 class Detect_Frame(tk.Frame):
     image_paths = []
@@ -169,7 +217,7 @@ class Detect_Frame(tk.Frame):
         self.canvas.rowconfigure(0, weight=1)
 
         self.images_frame = tk.Frame(self.canvas)
-        self.images_frame.grid(column = 0, row = 0, sticky='news')
+        self.images_frame.grid(column = 0, row = 0, sticky = 'news')
         self.images_frame.columnconfigure(0, weight=1)
         self.images_frame.rowconfigure(0, weight=1)
         
@@ -177,6 +225,7 @@ class Detect_Frame(tk.Frame):
         self.vsb = tk.Scrollbar(self, orient="vertical", command = self.canvas.yview)
         self.vsb.grid(row = 0, column = 999, sticky='ns')
         self.canvas.configure(yscrollcommand=self.vsb.set)
+        self.canvas.grid(row = 0, column = 0, sticky = 'news')
         self.canvas.create_window((0, 0), window=self.images_frame, anchor='nw')
 
         self.images_frame.bind("<Configure>", self.onFrameConfigure)
@@ -189,8 +238,8 @@ class Detect_Frame(tk.Frame):
         print("frame.winfo_width : ", self.winfo_reqwidth())
         print("max_img_showed :::", self.max_img_showed)
 
-        self.empty_label = tk.Label(self.images_frame, text="Please select an image to scan first")
-        self.empty_label.grid(row = 100, column = 100)
+        self.empty_label = tk.Label(self, text="Please select an image to scan first")
+        self.empty_label.grid(row = 0, column = 0, sticky = 'news')
 
         #self.fill_detections()
 
@@ -229,8 +278,11 @@ class Detect_Frame(tk.Frame):
         row = 0
         i = 0;
 
+        self.empty_label.destroy()
+
         for widget in self.images_frame.winfo_children():
             widget.destroy()
+
 
         #self.image_paths.clear()
         self.detect_labels.clear()
@@ -281,6 +333,9 @@ class Detect_Frame(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.style = ttk.Style()
+    #root.style.theme_use("clam")
+
     settings = Settings("D:/github/alegov2/", 15, (192, 192))
     MainApplication(root, settings).grid(column=0, row=0, sticky="NEWS")
     root.mainloop()
