@@ -39,6 +39,8 @@ class Settings():
         self.image_db_as_path = []
         self.image_desc = []
 
+        self.master_image_dir = ""
+
     def set_to_show(self, neo_to_show):
         self.to_show = neo_to_show
     
@@ -163,7 +165,7 @@ class MainApplication(tk.Frame):
         a_f.grid(row = 0, column = 0)
 
         about_label = tk.Label(a_f, text = """A face recognition application with a ranker feature.\nA grand task for Linear and Geometric Algebra.\n
-        Zaidan Naufal - Extractor, Report\nJon Felix - Extractor, Matcher\nHanif Muhamad - GUI\nCreated with Python 3, OpenCV, Tkinter, PIL, numpy, glob""")
+        Zaidan Naufal - Extractor, Report\nJon Felix - Extractor, Matcher\nHanif Muhamad - GUI\n\nCreated with Python 3, OpenCV, Tkinter, PIL, numpy, glob""")
         about_label.grid(row = 0, column = 0)
 
         about_label['text'] = """A face recognition application with a ranker feature.\nA grand task for Linear and Geometric Algebra.\n
@@ -191,8 +193,14 @@ class MainApplication(tk.Frame):
         open_db_button = tk.Button(self, text = "Open Extracted Database", command = self.open_extracted_databse)
         open_db_button.grid(row = 7, column = 2)
 
+        open_db_info = tk.Label(self, text = "Then specify the image path")
+        open_db_info.grid(row = 8, column = 2)
+
         scan_neo_dir_button = tk.Button(self, text = "Scan a directory of images", comman = self.open_scan_dir)
         scan_neo_dir_button.grid(row = 7, column = 4)
+
+        scan_neo_dir_info = tk.Label(self, text = "Automatically extracts features")
+        scan_neo_dir_info.grid(row = 8, column = 4)
 
         self.dbin_prog_bar = scan_progBar(self, mode = 'determinate', value = 0)
         self.dbin_prog_bar.grid(row = 999, column = 0, columnspan = 10, sticky='we', padx = 5, pady =5)
@@ -243,15 +251,23 @@ class MainApplication(tk.Frame):
             self.settings.image_desc.append(backEnd.extract_features(self.settings.image_db[i]))
 
     def open_extracted_databse(self, *args):
-        extract_db = tkfd.askopenfile(title = "Select a database of extracted images", filetypes = (("Image Databse",".npy"),("all files","*.* .*")))
+        extract_db = tkfd.askopenfilename(title = "Select a database of extracted images", filetypes = (("Image Databse",".npy"),("all files","*.* .*")))
 
         if (extract_db == '' or extract_db == None):
             print("NO FILES SELECTED!!!!")
         else:
-            ##!print("extract_db : ", extract_db)
-            
-            #image_desc = np.load(extract_db)
-            # DOESN'T WORK YET
+            print("extract_db : ", extract_db)
+
+            if (extract_db.lower().endswith('.npy')) :
+                self.settings.image_desc = np.load(extract_db)
+                #print("Loaded self.settings.image_desc : ", (self.settings.image_desc))
+
+                master_img_dir = tkfd.askdirectory(title = "Select the directory to find the images")
+                if (master_img_dir != '' or master_img_dir != None):
+                    glob_dir = master_img_dir + "/*.jpg"
+
+                    for img in glob.glob(glob_dir):
+                        self.settings.image_db_as_path.append(img)
 
             ##!print(image_desc)
             for child in self.winfo_children():
@@ -289,6 +305,9 @@ class Scan_Frame(tk.Frame):
 
         back_bt = tk.Button(top_frame, text = "BACK", command=self.back_to_welcome)
         back_bt.grid(row = 0, column = 1, sticky = 'w')
+
+        save_bt = tk.Button(top_frame, text = "SAVE DB", command=self.save_database)
+        save_bt.grid(row = 0, column = 2, sticky = 'w')
 
         open_bt = tk.Button(self, text = "Open Image", command = self.open_file) # Open image file to use as scan image
         open_bt.grid(row = 11, column = 0)
@@ -337,15 +356,29 @@ class Scan_Frame(tk.Frame):
         ##!print("curr_image_desc : ", self.master.settings.curr_image_desc)
 
     def back_to_welcome(self):
+
+        self.master.drame.detect_labels.clear()
+        self.master.drame.detect_images.clear()
+        for image in self.master.drame.image_paths:
+            image.close()
+        self.master.drame.image_paths.clear()
+
         for child in self.master.winfo_children():
             child.destroy()
 
         for img in self.master.settings.image_db:
             img = None
+
         self.master.settings.image_db = []
         self.master.settings.image_db_as_path = []
         self.master.settings.image_desc = []
         self.master.show_welcoming_window()
+    
+    def save_database(self):
+        save_file = tkfd.asksaveasfilename(title= "Save the current database", defaultextension=".npy", filetypes = (("Image Features", ".npy"),("all files","*.* .*")))
+        np.save(save_file, self.master.settings.image_desc)
+        #print("Saved : self.settings.image_desc : ", (self.master.settings.image_desc))
+        print()
 
 class Set_Frame(tk.Frame):
     # The frame for the settings stuffs, this used to be in a separate window
