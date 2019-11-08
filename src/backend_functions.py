@@ -51,6 +51,32 @@ def extract_features(image, vector_size=32):
 
     return desc
 
+def get_x_match_cosine(scan_img_desc, arr_desc, top_n):
+    current_comparison = []
+    most_similar_db_idx = []
+    for i in range(len(arr_desc)):
+        current_comparison.append(cosine_similarity(scan_img_desc, arr_desc[i]))
+        if (top_n > 0):
+            most_similar_db_idx = np.argsort(current_comparison)[(-1 * top_n):]
+            most_similar_db_idx = most_similar_db_idx[::-1]
+        else :
+            most_similar_db_idx = []
+
+    return current_comparison, most_similar_db_idx
+
+def get_x_match_euclid(scan_img_desc, arr_desc, top_n):
+    current_comparison = []
+    most_similar_db_idx = []
+    for i in range(len(arr_desc)):
+        current_comparison.append(euclidean_distance(scan_img_desc, arr_desc[i]))
+        if (top_n > 0):
+            most_similar_db_idx = (np.argsort(current_comparison)[::-1])[(-1 * top_n):]
+            most_similar_db_idx = most_similar_db_idx[::-1]
+        else :
+            most_similar_db_idx = []
+
+    return current_comparison, most_similar_db_idx
+
 def best10match_cosine(img, arrDescription, arrImg):
     img_f = extract_features(img)
     temp = []

@@ -5,3 +5,4 @@ src/src.zip
 .vscode/settings.json
 src/__pycache__/backend_functions.cpython-37.pyc
 src/__pycache__/main.cpython-37.pyc
+src/__pycache__/gui.cpython-37.pyc

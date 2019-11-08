@@ -25,6 +25,7 @@ class BackEndHolder():
         super().__init__(*args, **kwargs)
 
 class Settings():
+    # Saves all the needed settings
     def __init__(self, master_dir, to_show, img_size, *args, **kwargs):
         self.master_directory = master_dir
         self.to_show = to_show
@@ -88,36 +89,13 @@ class MainApplication(tk.Frame):
         #self.show_scanning_window()
         self.show_welcoming_window()
 
-
-
     def compareImages(self):
         self.settings.current_compare.clear();
 
-        #self.settings.most_similar_db_idx.clear();
-
         if (self.settings.get_scan_type() == 1): # 0 is cosine, 1 is euclid
-            #most_similar_db_idx.clear()
-            for i in range(len(self.settings.image_desc)): #Gets the similarity metric using Euclidean
-                #print("curr_image_desc : ", self.settings.curr_image_desc)
-                #print("Image des _ I :", image_desc[i])
-                self.settings.current_compare.append(backEnd.euclidean_distance(self.settings.curr_image_desc, self.settings.image_desc[i]))
-                if (self.settings.get_to_show() > 0):
-                    self.settings.most_similar_db_idx = (np.argsort(self.settings.current_compare)[::-1])[(-1 * self.settings.get_to_show()):]
-                    self.settings.most_similar_db_idx = self.settings.most_similar_db_idx[::-1]
-                else :
-                    self.settings.most_similar_db_idx = []
+            self.settings.current_compare, self.settings.most_similar_db_idx = backEnd.get_x_match_euclid(self.settings.curr_image_desc, self.settings.image_desc, self.settings.get_to_show())
         else:
-            for i in range(len(self.settings.image_desc)): #Gets the similarity metric using cosine
-                #print("curr_image_desc : ", self.settings.curr_image_desc)
-                #print("Image des _ I :", image_desc[i])
-                self.settings.current_compare.append(backEnd.cosine_similarity(self.settings.curr_image_desc, self.settings.image_desc[i]))
-                if (self.settings.get_to_show() > 0):
-                    self.settings.most_similar_db_idx = np.argsort(self.settings.current_compare)[(-1 * self.settings.get_to_show()):]
-                    self.settings.most_similar_db_idx = self.settings.most_similar_db_idx[::-1]
-                else :
-                    self.settings.most_similar_db_idx = []
-        
-        ##!print("self.settings.most_similar_db_idx : ", self.settings.most_similar_db_idx)
+            self.settings.current_compare, self.settings.most_similar_db_idx = backEnd.get_x_match_cosine(self.settings.curr_image_desc, self.settings.image_desc, self.settings.get_to_show())
 
     def callDetectionAgain(self): # Calls the detection and repopulates the detection frame
         ##!print("DETECT AGAINA")
@@ -575,7 +553,6 @@ class Detect_Frame(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk() # Main Window
-    root.style = ttk.Style()
     #root.style.theme_use("clam") #Uses Clam theme
     current_path = os.path.dirname(os.path.realpath(__file__)) #Gets the current gui script directory in order to get gui images
     current_path = current_path.replace("\\", "/")
